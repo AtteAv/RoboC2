@@ -15,22 +15,15 @@ Library             RPA.Dialogs
 Library             RPA.Robocorp.Vault
 
 
-*** Variables ***
-${rowCount}
-${columnCount}
-${currentOrderIndex}
-
-
 *** Tasks ***
 Order robots from RobotSpareBin Industries Inc
     Get order file
     Open page
 
     ${table}=    Read table from CSV    orders.csv
-    ${rowCount}    ${columnCount}=    Get Table Dimensions    ${table}
 
-    FOR    ${currentOrderIndex}    IN RANGE    0    ${rowCount}    1
-        Handle order    ${currentOrderIndex}
+    FOR    ${row}    IN    @{table}
+        Handle order    ${row}
     END
 
     Add receipts to archive
@@ -53,46 +46,49 @@ Open page
     Open Available Browser    ${secret}[Web-address]
 
 Handle order
-    [Arguments]    ${orderCnt}
+    [Arguments]    ${row}
     Close modal
-    Fill the form    ${orderCnt}
-    Save preview    ${orderCnt}
-    Wait Until Keyword Succeeds    5x    0.8s    Order robot    ${orderCnt}
+    Fill the form    ${row}
+
+    ${orderNum}=    Set Variable    ${row}[Order number]
+    Save preview    ${orderNum}
+    Wait Until Keyword Succeeds    5x    0.8s    Order robot    ${orderNum}
 
 Close modal
     Click Button    xpath=//div[@class='alert-buttons']//button[@class='btn btn-dark']
 
 Fill the form
-    [Arguments]    ${orderCnt}
-
-    ${table}=    Read table from CSV    orders.csv
-    ${row}=    Get Table Row    ${table}    ${orderCnt}
+    [Arguments]    ${row}
     Select From List By Index    head    ${row}[Head]
     Click Button    id=id-body-${row}[Body]
-    Input Text    xpath=//input[@min=1]    ${row}[Legs]
+    Input Text    xpath=//input[@placeholder="Enter the part number for the legs"]    ${row}[Legs]
     Input Text    id=address    ${row}[Address]
 
 Save preview
-    [Arguments]    ${orderCnt}
+    [Arguments]    ${orderNum}
     Click Button    id=preview
     Wait Until Element Is Visible    id:robot-preview-image
     Sleep    0.5s    #Make sure the image has fully loaded
-    Screenshot    id=robot-preview-image    ${OUTPUT_DIR}${/}preview${orderCnt}.jpg
+    Screenshot    id=robot-preview-image    ${OUTPUT_DIR}${/}preview${orderNum}.jpg
 
 Order robot
-    [Arguments]    ${orderCnt}
+    [Arguments]    ${orderNum}
     Wait Until Element Is Visible    id:order
     Click Button    id=order
     Wait Until Element Is Visible    id:receipt
     ${receipt}=    Get Element Attribute    id=receipt    outerHTML
-    HTML To PDF    ${receipt}    ${OUTPUT_DIR}${/}receipt${orderCnt}.pdf
-    ${image}=    Create List    ${OUTPUT_DIR}${/}preview${orderCnt}.jpg
-    Add Files To Pdf    ${image}    ${OUTPUT_DIR}${/}receipt${orderCnt}.pdf    True
+    HTML To PDF    ${receipt}    ${OUTPUT_DIR}${/}receipt${orderNum}.pdf
+    ${image}=    Create List    ${OUTPUT_DIR}${/}preview${orderNum}.jpg
+    Add Files To Pdf    ${image}    ${OUTPUT_DIR}${/}receipt${orderNum}.pdf    True
     Wait Until Element Is Visible    id:order-another
     Click Button    id=order-another
 
 Add receipts to archive
-    ${recList}=    Find Files    **/*.pdf    ${OUTPUT_DIR}
-    Create Directory    ${OUTPUT_DIR}${/}Receipts
-    Copy Files    ${recList}    ${OUTPUT_DIR}${/}Receipts
-    Archive Folder With Zip    ${OUTPUT_DIR}${/}Receipts    ${OUTPUT_DIR}${/}Receipts.zip
+    ${ReceiptDir}=    Set Variable    ${OUTPUT_DIR}${/}Receipts
+    ${recList}=    Find Files    */*.pdf    ${OUTPUT_DIR}
+    Create Directory    ${ReceiptDir}
+    ${directory_not_empty}=    Is Directory Not Empty    ${ReceiptDir}
+    IF    ${directory_not_empty}    Empty Directory    ${ReceiptDir}
+
+    Copy Files    ${recList}    ${ReceiptDir}
+    Archive Folder With Zip    ${ReceiptDir}    ${OUTPUT_DIR}${/}Receipts.zip
