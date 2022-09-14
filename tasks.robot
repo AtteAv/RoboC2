@@ -52,7 +52,9 @@ Handle order
 
     ${orderNum}=    Set Variable    ${row}[Order number]
     Save preview    ${orderNum}
-    Wait Until Keyword Succeeds    5x    0.8s    Order robot    ${orderNum}
+    Wait Until Keyword Succeeds    5x    0.8s    Attempt to submit form
+    Generate receipt pdf    ${orderNum}
+    Switch to next order
 
 Close modal
     Click Button    xpath=//div[@class='alert-buttons']//button[@class='btn btn-dark']
@@ -71,15 +73,19 @@ Save preview
     Sleep    0.5s    #Make sure the image has fully loaded
     Screenshot    id=robot-preview-image    ${OUTPUT_DIR}${/}preview${orderNum}.jpg
 
-Order robot
-    [Arguments]    ${orderNum}
+Attempt to submit form
     Wait Until Element Is Visible    id:order
     Click Button    id=order
     Wait Until Element Is Visible    id:receipt
+
+Generate receipt pdf
+    [Arguments]    ${orderNum}
     ${receipt}=    Get Element Attribute    id=receipt    outerHTML
     HTML To PDF    ${receipt}    ${OUTPUT_DIR}${/}receipt${orderNum}.pdf
     ${image}=    Create List    ${OUTPUT_DIR}${/}preview${orderNum}.jpg
     Add Files To Pdf    ${image}    ${OUTPUT_DIR}${/}receipt${orderNum}.pdf    True
+
+Switch to next order
     Wait Until Element Is Visible    id:order-another
     Click Button    id=order-another
 
