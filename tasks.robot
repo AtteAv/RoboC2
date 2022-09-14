@@ -52,7 +52,7 @@ Handle order
 
     ${orderNum}=    Set Variable    ${row}[Order number]
     Save preview    ${orderNum}
-    Wait Until Keyword Succeeds    5x    0.8s    Attempt to submit form
+    Submit Order
     Generate receipt pdf    ${orderNum}
     Switch to next order
 
@@ -72,6 +72,10 @@ Save preview
     Wait Until Element Is Visible    id:robot-preview-image
     Sleep    0.5s    #Make sure the image has fully loaded
     Screenshot    id=robot-preview-image    ${OUTPUT_DIR}${/}preview${orderNum}.jpg
+
+Submit Order
+    Wait Until Keyword Succeeds    5x    0.8s
+    ...    Attempt to submit form
 
 Attempt to submit form
     Wait Until Element Is Visible    id:order
