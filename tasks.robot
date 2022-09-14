@@ -67,17 +67,10 @@ Fill the form
 
     ${table}=    Read table from CSV    orders.csv
     ${row}=    Get Table Row    ${table}    ${orderCnt}
-    ${val}=    Get From Dictionary    ${row}    Head
-    Select From List By Index    head    ${val}
-
-    ${val}=    Get From Dictionary    ${row}    Body
-    Click Button    id=id-body-${val}
-
-    ${val}=    Get From Dictionary    ${row}    Legs
-    Input Text    xpath=//input[@min=1]    ${val}
-
-    ${val}=    Get From Dictionary    ${row}    Address
-    Input Text    id=address    ${val}
+    Select From List By Index    head    ${row}[Head]
+    Click Button    id=id-body-${row}[Body]
+    Input Text    xpath=//input[@min=1]    ${row}[Legs]
+    Input Text    id=address    ${row}[Address]
 
 Save preview
     [Arguments]    ${orderCnt}
